@@ -6,17 +6,20 @@ A [Claude Code](https://claude.com/claude-code) skill and agent presets for runn
 
 | Tier | Where it runs | Role |
 |---|---|---|
-| **Opus** | main Claude Code session | Classifies tasks, writes specs, synthesizes results. The only dispatcher. |
+| **Opus (manager)** | main Claude Code session | Talks to the user, classifies and splits tasks, picks each worker's model and effort, synthesizes worker reports. The only dispatcher. |
 | **Luna** (`gpt-6-luna`) | Codex CLI | Default executor for simple and medium work: bulk, research, exploration, scoped implementation. |
 | **Sol** (`gpt-6-sol`) | Codex CLI | Precision execution against a complete spec. |
 | **Astra** (`gpt-6-astra`) | Codex CLI | Hard reasoning only. It burns quota fastest. |
-| **Sonnet** | `sonnet-worker` preset | Claude-side tools, second-opinion review, fallback when GPT fails. |
+| **Sonnet** | `sonnet-worker`, `sonnet-worker-high` presets | Claude-side tools, second-opinion review, fallback when GPT fails. |
+| **Opus workers** | `opus-worker`, `opus-worker-high` presets | Detailed judgment-heavy work, highest-stakes and extra isolated reviews. |
 | **Haiku** | `haiku-worker` preset | Fallback only, for simple work when GPT is unavailable. |
 
 Key ideas:
 
+- **Manager / worker.** You talk only to the top-level Opus session; workers report back to it when they finish.
 - **Delegation is one level deep.** Only Opus dispatches work, so every call is auditable.
-- **Claude quota is read live.** `statusline.sh` writes it to `~/.claude/rate-limit-status.json` on every message, and Sonnet use is gated on it.
+- **Effort is chosen per task.** The manager picks each worker's effort (Codex `model_reasoning_effort`, or the preset's `effort`).
+- **Claude quota is read live.** `statusline.sh` writes it to `~/.claude/rate-limit-status.json` on every message, and Claude-side worker use (Sonnet and Opus) is gated on it.
 - **Review family follows risk.** High-risk changes are reviewed by the other model family; routine work relies on tests and CI (rule 9, backed by Greptile's 2026 cross-family data).
 - **Routing follows data.** It is based on published benchmarks and a small Luna-vs-Sonnet head-to-head (see "Benchmark basis" and rule 5 in `SKILL.md`).
 
@@ -26,7 +29,10 @@ The tier labels in the skill are Turkish: **basit** = simple, **orta** = medium,
 
 ```
 skills/opus-orchestration/SKILL.md   the policy (loaded as a Claude Code skill)
-agents/sonnet-worker.md              Sonnet preset
+agents/sonnet-worker.md              Sonnet preset (medium effort)
+agents/sonnet-worker-high.md         Sonnet preset (high effort)
+agents/opus-worker.md                Opus worker preset (medium effort)
+agents/opus-worker-high.md           Opus worker preset (high effort)
 agents/haiku-worker.md               Haiku fallback preset
 statusline/statusline.sh             statusLine hook that snapshots quota usage
 install.sh                           symlinks everything into ~/.claude
@@ -76,7 +82,7 @@ Then enable the status line in `~/.claude/settings.json`:
 
 The policy relies on four Claude Code features:
 
-- the `Agent` tool and `~/.claude/agents/` presets, for dispatching `sonnet-worker` and `haiku-worker`;
+- the `Agent` tool and `~/.claude/agents/` presets, for dispatching the `*-worker` presets;
 - the `statusLine` hook, which provides `rate_limits` for live quota checks;
 - Opus running as the top-level session model;
 - Claude Code's skill loader.

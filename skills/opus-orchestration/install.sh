@@ -29,6 +29,9 @@ link() {
 link "$REPO/skills/opus-orchestration" "$CLAUDE_DIR/skills/opus-orchestration"
 link "$REPO/agents/sonnet-worker.md"   "$CLAUDE_DIR/agents/sonnet-worker.md"
 link "$REPO/agents/haiku-worker.md"    "$CLAUDE_DIR/agents/haiku-worker.md"
+for a in sonnet-worker-high opus-worker opus-worker-high; do
+  link "$REPO/agents/$a.md" "$CLAUDE_DIR/agents/$a.md"
+done
 link "$REPO/statusline/statusline.sh"  "$CLAUDE_DIR/statusline.sh"
 chmod +x "$REPO/statusline/statusline.sh"
 

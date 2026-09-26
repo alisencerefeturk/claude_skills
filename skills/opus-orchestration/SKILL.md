@@ -1,6 +1,6 @@
 ---
 name: opus-orchestration
-description: "Delegation policy for a Claude Pro + ChatGPT Plus stack (no Fable/Max access) where Opus runs the main orchestration loop and is the only dispatcher. On the GPT side (via Codex CLI) Luna is the default executor for basit and orta work (bulk, research, scoped implementation), Sol does precision execution, and Astra is reserved for hard reasoning only. Sonnet is the Claude-side lane for work needing Claude-side tools, second-opinion review, and fallback when GPT fails; its use is gated by ~/.claude/rate-limit-status.json. Opus classifies tasks inline (no Haiku triage gate); Haiku is a fallback only. Load whenever spawning sub-agents (Agent tool) or Codex CLI lanes, or planning any delegation."
+description: "Delegation policy for a Claude Pro + ChatGPT Plus stack (no Fable/Max access) where the top-level Opus session acts as a manager — it talks to the user, dispatches workers, picks each worker's effort level, and integrates their reports — and is the only dispatcher. On the GPT side (via Codex CLI) Luna is the default executor for basit and orta work (bulk, research, scoped implementation), Sol does precision execution, and Astra is reserved for hard reasoning only. Sonnet is the Claude-side lane for work needing Claude-side tools, second-opinion review, and fallback when GPT fails; Opus workers take detailed judgment-heavy work and extra/high-stakes reviews; all Claude-side dispatch is gated by ~/.claude/rate-limit-status.json. Opus classifies tasks inline (no Haiku triage gate); Haiku is a fallback only. Load whenever spawning sub-agents (Agent tool) or Codex CLI lanes, or planning any delegation."
 ---
 
 # Orchestration & delegation policy (Claude Pro + ChatGPT Plus stack)
@@ -21,6 +21,24 @@ Core law: **Opus's quota is the tightest constraint in the whole stack, so it
 must never do work that is cheaper to delegate.** Its turns buy judgment, not
 throughput.
 
+## Manager / worker model
+
+The user talks only to the top-level Opus session. That session is the
+**manager**, like a manager in a company with a team under it:
+
+- It takes the request, splits it into tasks, picks a worker (lane + model +
+  effort level) for each, writes the brief, and dispatches.
+- Workers do the work and **report back when they finish**. Claude-side
+  workers run in the background and the manager is notified on completion;
+  `codex exec` lanes run as background Bash commands and notify on exit. The
+  manager does not poll and does not redo a worker's job.
+- The manager reads each report, decides the next step (accept, send back
+  with a correction, escalate to review, ask the user), integrates the
+  result, and tells the user in short status lines what is running, what
+  finished, and what needs their decision.
+- Independent tasks can run in parallel (read-only exploration freely; at
+  most one worker editing the same files at a time).
+
 ## The hard rules
 
 1. **Opus classifies inline — no separate triage agent.** Every task already
@@ -36,17 +54,25 @@ throughput.
    delegated, even if Opus "could" do it faster itself.
 3. **Delegation is one level deep; Opus is the only dispatcher.** Only the
    top-level Opus session spawns agents or runs `codex exec`. Workers
-   (sonnet-worker, haiku-worker) never spawn agents and never call Codex CLI.
+   (all `*-worker` presets, including the Opus ones) never spawn agents and
+   never call Codex CLI.
    If a worker's task needs GPT-side execution, the worker drafts the spec and
    returns it; Opus re-reads it and dispatches. This keeps every dispatch
    auditable, and keeps the quota check (rule 5) in the one place that reads
    `~/.claude/rate-limit-status.json`.
-4. **Dispatch through the named presets, not a raw model override.** Use
-   `Agent(subagent_type: "sonnet-worker")` (and `haiku-worker` only in its
-   fallback role) — defined in `~/.claude/agents/` — rather than a generic
-   Agent call with a manually-set `model:` field, so a dispatch can never
-   accidentally omit-and-inherit Opus. If a preset is ever unavailable, fall
-   back to an explicit `model:` field — never omit it.
+4. **Dispatch through the named presets, not a raw model override.** Claude-
+   side workers are `sonnet-worker`, `sonnet-worker-high`, `opus-worker`,
+   `opus-worker-high` and (fallback only) `haiku-worker`, defined in
+   `~/.claude/agents/`. Each preset fixes both model and effort, so the
+   choice of preset *is* the effort choice (rule 10), and a dispatch can
+   never silently inherit the manager's model and effort. Don't use generic
+   types (`general-purpose`, `Explore`, `Plan`, `claude`): with no model
+   set they inherit Opus at the manager's effort, unplanned. Don't use
+   `fork` for review — a fork inherits the manager's whole conversation, so
+   it isn't isolated (rule 9); use it only when a task genuinely needs that
+   full context, knowing it runs on Opus at the manager's effort. If a
+   preset is unavailable, fall back to an explicit `model:` field — never
+   omit it.
 5. **Luna is the default for orta work; Sonnet is the exception.** Claude
    Pro quota is the scarcer side of the stack, and Sonnet load is what drives
    the Claude 5h/7d windows up fastest. Orta tasks go to Luna unless one of
@@ -56,10 +82,11 @@ throughput.
    - a second-opinion review of a Luna result is worth the Claude quota
      (high-stakes change, Luna's output looks off);
    - GPT-side dispatches are failing (see "Continuity").
-   Before sending anything to Sonnet, read `~/.claude/rate-limit-status.json`:
-   if `five_hour.used_percentage >= 60` OR `seven_day.used_percentage >= 70`,
-   skip optional Sonnet work (second-opinion reviews) and keep Sonnet only
-   for work that genuinely can't run on Luna. Thresholds are a starting
+   Before sending anything to a Claude-side worker (Sonnet or Opus), read
+   `~/.claude/rate-limit-status.json`: if `five_hour.used_percentage >= 60`
+   OR `seven_day.used_percentage >= 70`, skip optional Claude-side work
+   (second-opinion and extra reviews) and keep Claude-side workers only for
+   work that genuinely can't run on Luna. Thresholds are a starting
    point — tune them in practice.
    - **Basis:** a 2026-09-23 head-to-head on three orta tasks (bug fix with a
      second unreported bug, loose-brief feature, cross-file code questions),
@@ -95,11 +122,13 @@ throughput.
    Every dispatch uses this shape:
 
    ```
-   codex exec --model <id> --skip-git-repo-check -s workspace-write \
+   codex exec --model <id> -c model_reasoning_effort=<level> \
+     --skip-git-repo-check -s workspace-write \
      -o <scratch>/<task>-last-message.txt "<spec>" \
      < /dev/null > <scratch>/<task>.log 2>&1
    ```
 
+   - `-c model_reasoning_effort=<level>`: always set it (rule 10).
    - `--skip-git-repo-check`: `codex exec` refuses outside a trusted git repo
      without it.
    - `< /dev/null` is mandatory, especially for background runs. `codex exec`
@@ -112,8 +141,13 @@ throughput.
 9. **Review family follows risk, not every change.** For high-risk work
    (auth/permissions, money, security, data-destroying migrations, deploy,
    external access), the reviewer must come from the **other family** than
-   the executor: Claude wrote it → Sol reviews; GPT wrote it → Sonnet (or
-   Opus for the highest-stakes calls) reviews. For routine work, tests, CI
+   the executor: Claude wrote it → Sol reviews; GPT wrote it →
+   `sonnet-worker-high` reviews, or `opus-worker-high` for the
+   highest-stakes calls. The manager never reviews its own integration as
+   "the independent review": it knows the author's reasoning, so it isn't
+   isolated — an Opus review is always a separate `opus-worker*` dispatch.
+   The manager may add an extra isolated `opus-worker` review on top of the
+   required one whenever it judges the change risky enough. For routine work, tests, CI
    and a break-it verification scenario are the primary safeguard. An AI
    review is optional there, isolated, and from any family, so the cheapest
    suitable reviewer is fine. If a project defines its own risk tiers,
@@ -138,16 +172,45 @@ throughput.
      most execution now runs on GPT, mandatory cross-family review on
      routine work would spend scarce Claude quota for unproven gain.
 
+10. **The manager picks every worker's effort level, per task.** Effort is
+    part of the routing decision, not a fixed default. Choose the lowest
+    level that will do the job right; raise it when a first attempt fails
+    for lack of reasoning, not by default.
+    - **Codex lanes:** add `-c model_reasoning_effort=<level>` to every
+      `codex exec` call (the config default is `high`, so an omitted flag
+      means high). Guide: mechanical/bulk/simple lookup → `low`; scoped
+      implementation, bug fix, research → `medium`; contract-bound precise
+      execution, migrations, tricky debugging, isolated review → `high`;
+      Astra's hard reasoning → `high`, or `xhigh` if the model accepts it
+      (fall back to `high` if Codex rejects the value).
+    - **Claude-side:** pick the preset. `sonnet-worker` (medium) for routine
+      Claude-side work; `sonnet-worker-high` for harder Sonnet work and
+      medium-risk cross-family review; `opus-worker` (medium) for detailed,
+      judgment-heavy execution and extra reviews; `opus-worker-high` for the
+      hardest work and high-risk reviews. `haiku-worker` has no effort knob
+      and stays fallback-only. If a level is needed that has no preset
+      (e.g. low or xhigh), add a preset rather than using a raw override.
+    - State lane + model + effort in one line when dispatching, so the user
+      and the checkpoint can see the choice.
+
 ## Choosing the delegate
 
 - **Luna** (Codex CLI) — default lane for basit and orta work: bulk,
   research, codebase exploration, scoped implementation and bug fixing,
   including work over large inputs (API USD 0.10 / 0.50 per 1M tokens — by far
   the cheapest tier). See rule 5.
-- **Sonnet** (`sonnet-worker`) — Claude-side lane per rule 5's exceptions:
-  work needing Claude-side tools, cross-family review of GPT output on
-  high-risk work (rule 9), optional second opinions, and orta fallback when
+- **Sonnet** (`sonnet-worker` / `sonnet-worker-high`) — Claude-side lane per
+  rule 5's exceptions: work needing Claude-side tools, cross-family review
+  of GPT output (rule 9), optional second opinions, and orta fallback when
   GPT is failing. Quota-gated by the snapshot file.
+- **Opus workers** (`opus-worker` / `opus-worker-high`) — detailed work that
+  needs judgment inside the execution (where a spec can't pin every
+  decision), highest-stakes isolated reviews, and extra reviews the manager
+  judges worthwhile. Allowed by the owner's decision (2026-09-26): Opus 5.5
+  tends to finish a job with fewer tokens, which offsets its higher
+  per-token price (API 4/20 vs Sonnet 2/10), so on judgment-heavy work it
+  can cost the same or less. Same quota gate as Sonnet; Luna stays the
+  default for plain basit/orta work.
 - **Sol** (Codex CLI) — precision execution once a complete spec exists:
   hard implementation, migrations, test-writing against a defined contract.
 - **Astra** (Codex CLI) — hard reasoning only, per rule 6.
@@ -162,11 +225,13 @@ throughput.
    (Haiku if GPT is failing).
 3. **orta** → Opus writes a brief/spec and dispatches to Luna (Sol if the
    work needs precise, contract-bound execution). Sonnet only for rule 5's
-   exceptions, after reading `~/.claude/rate-limit-status.json`.
+   exceptions, after reading `~/.claude/rate-limit-status.json`. Pick the
+   effort level per rule 10.
 4. **zor / mimari-hassas** → Opus handles the judgment part directly (spec,
    architecture, synthesis) and delegates the mechanical portions: Sol for
    precise execution, Luna for exploration, Astra only if the core
-   difficulty is reasoning. The review follows rule 9: for high-risk work,
+   difficulty is reasoning, `opus-worker(-high)` for detailed work where
+   judgment can't be fully specified up front. The review follows rule 9: for high-risk work,
    the reviewer comes from the other family. Opus always owns final
    integration on this tier.
 
@@ -184,7 +249,7 @@ that file directly to get current Claude-side quota usage.
 Codex CLI has no equivalent: only per-thread token counts, no account-wide
 quota, and `/status` is interactive-only. GPT-side quota stays reactive-only.
 
-- **Check the snapshot file before every Sonnet dispatch** (rule 5), as a
+- **Check the snapshot file before every Claude-side dispatch** (rule 5), as a
   fixed step of routing, not "at milestones".
 - **Treat 85%+ on either window as a harder signal** — wrap up the current
   unit of work and checkpoint rather than starting another large one. If the

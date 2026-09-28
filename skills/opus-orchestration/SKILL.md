@@ -95,7 +95,8 @@ The user talks only to the top-level Opus session. That session is the
      length limit; Sonnet 4/6 (missed the unreported bug), 6/7 (crashed on
      invalid input), 12/12 but over the length limit. Similar token use.
      One run per task on a small repo — directional, not conclusive; revisit
-     if Luna underperforms on real work.
+     if Luna underperforms on real work. This test used **Sonnet 5**; Sonnet
+     5.5 (2026-09-28) has not been re-tested against Luna.
 6. **Astra is for hard reasoning only.** Astra burns Codex quota fastest
    (API price 5× Sol, 100× Luna). Use it only when the task's difficulty is
    the reasoning itself — tricky algorithm/math design, a subtle root cause
@@ -202,7 +203,19 @@ The user talks only to the top-level Opus session. That session is the
 - **Sonnet** (`sonnet-worker` / `sonnet-worker-high`) — Claude-side lane per
   rule 5's exceptions: work needing Claude-side tools, cross-family review
   of GPT output (rule 9), optional second opinions, and orta fallback when
-  GPT is failing. Quota-gated by the snapshot file.
+  GPT is failing. Quota-gated by the snapshot file. The presets use the
+  `sonnet` alias, which resolves to **Sonnet 5.5** (`claude-sonnet-5-5`,
+  released 2026-09-28; verified 2026-09-29).
+  - **Sonnet 5.5 executor trial (2026-09-29):** Sonnet 5.5 is a large jump
+    over Sonnet 5 (Terminal-Bench 4.0 70.6% vs 10.3%, above Opus 5.5's
+    66.4%), but on the only coding benchmark with a Sol number (FrontierCode
+    1.1) Sol leads: 49.3% / 52.1% Xhigh vs Sonnet 5.5's 46.2%. All vendor
+    data. So Sol is not replaced wholesale. Instead, the next medium-risk
+    implementation task runs on `sonnet-worker-high`, with Sol as the
+    cross-family reviewer (rule 9). Compare review P0/P1 count, bugs caught
+    by E2E/the manager, fix rounds and wall time against Sol's recent tasks.
+    If Sonnet 5.5 does better, revise rule 5 and the Sol entry below; until
+    then high-risk implementation stays on Sol.
 - **Opus workers** (`opus-worker` / `opus-worker-high`) — detailed work that
   needs judgment inside the execution (where a spec can't pin every
   decision), highest-stakes isolated reviews, and extra reviews the manager
@@ -266,17 +279,18 @@ quota, and `/status` is interactive-only. GPT-side quota stays reactive-only.
   cap per the snapshot or user, and GPT failing on every tier): finish the
   checkpoint, state what's done and what's left, and end the turn.
 
-## Benchmark basis (2026-09-23)
+## Benchmark basis (2026-09-23, Sonnet 5.5 added 2026-09-29)
 
 Published numbers this routing is based on (vendor sources, differing effort
 levels — treat as directional):
 
 | Model | Notable published results | Context | API $/1M in/out |
 |---|---|---|---|
-| Opus 5.5 | Terminal-Bench 4.0 66.4%, OSWorld 2.0 81.8% partial, HLE (tools) 67.7% | 1M | 4 / 20 |
-| Sonnet 5 | numbers only published as charts | 1M | 2 / 10 |
+| Opus 5.5 | Terminal-Bench 4.0 66.4%, OSWorld 2.0 81.8% partial, HLE (tools) 67.7%, FrontierCode 1.1 54.4%, CursorBench 4.0 57.8% | 1M | 4 / 20 |
+| Sonnet 5.5 | Terminal-Bench 4.0 70.6%, FrontierCode 1.1 46.2% (Max), CursorBench 4.0 55.5%, OSWorld 2.1 80.1% partial, HLE (tools) 64.5%; vendor claims 30%+ faster output than Sonnet 5 and up to 30% lower cost per task; Vals AI (independent) #2 of 66, 69.22% | 1M (128K out) | 2 / 10 |
+| Sonnet 5 | Terminal-Bench 4.0 10.3%, FrontierCode 1.1 42.4%, CursorBench 4.0 34.1% (from the Sonnet 5.5 launch page) | 1M | 2 / 10 |
 | Haiku 4.5 | SWE-bench Verified 73.3% | 200K | 1 / 5 |
-| gpt-6-sol | none published yet | 1.05M | 2 / 10 |
+| gpt-6-sol | FrontierCode 1.1 49.3% / 52.1% Xhigh (reported on Anthropic's Sonnet 5.5 page); no OpenAI-published coding numbers | 1.05M | 2 / 10 |
 | gpt-6-luna | none published yet | 1.05M | 0.10 / 0.50 |
 | gpt-6-astra | GPQA 96.0%, ARC-AGI-2 95.0%, BrowseComp 91.5%, Terminal-Bench 4.0 57.9%, OSWorld 2.0 72.6% partial | 1.05M | 10 / 50 |
 

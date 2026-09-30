@@ -104,6 +104,11 @@ The user talks only to the top-level Opus session. That session is the
    terminal-heavy, computer-use, bulk, or long-context work: published
    numbers show Opus 5.5 ahead of Astra on Terminal-Bench 4.0 and OSWorld
    2.0, and every GPT tier already has a ~1M context.
+   Since Sol 6.1 (2026-09-29), try Sol at `xhigh` before escalating to
+   Astra. OpenAI reports Sol 6.1 matching Astra on DeepSWE v1.1 and coming
+   within 2.1 points of it on OSWorld 2.0, at one-fifth the API price. Astra
+   still leads on scientific work (Terminal-Bench Science 68.1%), so it
+   stays the lane for hard math, science and correctness reasoning.
 7. **Spec quality gates every Codex CLI dispatch.** Sol and Luna execute a
    spec precisely but don't fill gaps well. A vague spec costs a wasted retry
    (and wasted GPT quota). Whoever drafts the spec (Opus, or Sonnet returning
@@ -113,9 +118,15 @@ The user talks only to the top-level Opus session. That session is the
    Plus login. Real model IDs (confirmed via `codex` → `/model`):
 
    - Luna: `codex exec --model gpt-6-luna "<spec>"`
-   - Sol: `codex exec --model gpt-6-sol "<spec>"`
+   - Sol: `codex exec --model gpt-6.1-sol "<spec>"`
    - Astra: `codex exec --model gpt-6-astra "<spec>"` (rule 6 only)
 
+   `gpt-6.1-sol` (released 2026-09-29) replaces `gpt-6-sol`. It needs
+   codex-cli 0.159.0 or newer. On 0.158.0 it failed with "not supported when
+   using Codex with a ChatGPT account". It was verified working on 0.159.0
+   on 2026-09-29. When a new model ID fails with that error, first update
+   Codex (`npm i -g @openai/codex`) and check `~/.codex/models_cache.json`.
+   No 6.1 version of Luna or Astra shipped.
    `gpt-6-luna` / `gpt-6-sol` replaced `gpt-5.6-luna` / `gpt-5.6-sol`. The
    old Terra tier has no gpt-6 successor and is retired from this policy; if
    a gpt-6-terra ships, revisit the policy rather than silently adding it.
@@ -183,7 +194,10 @@ The user talks only to the top-level Opus session. That session is the
       implementation, bug fix, research → `medium`; contract-bound precise
       execution, migrations, tricky debugging, isolated review → `high`;
       Astra's hard reasoning → `high`, or `xhigh` if the model accepts it
-      (fall back to `high` if Codex rejects the value).
+      (fall back to `high` if Codex rejects the value). `gpt-6.1-sol`
+      accepts `low` through `xhigh` and `max`. Use `xhigh` for the
+      "try Sol before Astra" step in rule 6, and save `max` for a retry
+      after `xhigh` has failed.
     - **Claude-side:** pick the preset. `sonnet-worker` (medium) for routine
       Claude-side work; `sonnet-worker-high` for harder Sonnet work and
       medium-risk cross-family review; `opus-worker` (medium) for detailed,
@@ -215,7 +229,10 @@ The user talks only to the top-level Opus session. That session is the
     cross-family reviewer (rule 9). Compare review P0/P1 count, bugs caught
     by E2E/the manager, fix rounds and wall time against Sol's recent tasks.
     If Sonnet 5.5 does better, revise rule 5 and the Sol entry below; until
-    then high-risk implementation stays on Sol.
+    then high-risk implementation stays on Sol. The trial baseline is now
+    Sol 6.1, so compare against Sol 6.1 tasks only, not earlier gpt-6-sol
+    ones. OpenAI claims Sol 6.1 is +6.4 points over gpt-6-sol on DeepSWE
+    v1.1, which likely widens Sol's coding lead.
 - **Opus workers** (`opus-worker` / `opus-worker-high`) — detailed work that
   needs judgment inside the execution (where a spec can't pin every
   decision), highest-stakes isolated reviews, and extra reviews the manager
@@ -279,7 +296,7 @@ quota, and `/status` is interactive-only. GPT-side quota stays reactive-only.
   cap per the snapshot or user, and GPT failing on every tier): finish the
   checkpoint, state what's done and what's left, and end the turn.
 
-## Benchmark basis (2026-09-23, Sonnet 5.5 added 2026-09-29)
+## Benchmark basis (2026-09-23; Sonnet 5.5 and Sol 6.1 added 2026-09-29)
 
 Published numbers this routing is based on (vendor sources, differing effort
 levels — treat as directional):
@@ -290,6 +307,7 @@ levels — treat as directional):
 | Sonnet 5.5 | Terminal-Bench 4.0 70.6%, FrontierCode 1.1 46.2% (Max), CursorBench 4.0 55.5%, OSWorld 2.1 80.1% partial, HLE (tools) 64.5%; vendor claims 30%+ faster output than Sonnet 5 and up to 30% lower cost per task; Vals AI (independent) #2 of 66, 69.22% | 1M (128K out) | 2 / 10 |
 | Sonnet 5 | Terminal-Bench 4.0 10.3%, FrontierCode 1.1 42.4%, CursorBench 4.0 34.1% (from the Sonnet 5.5 launch page) | 1M | 2 / 10 |
 | Haiku 4.5 | SWE-bench Verified 73.3% | 200K | 1 / 5 |
+| gpt-6.1-sol | OpenAI launch (2026-09-29), relative figures only: DeepSWE v1.1 matches Astra and +6.4 over gpt-6-sol at lower effort; AutomationBench +2.2 vs Opus 5.5 at ~1/3 cost; OSWorld 2.0 +7 vs gpt-6-sol, within 2.1 of Astra; GDP.pdf above Opus 5.5 at <1/2 cost; Terminal-Bench Science >2× gpt-6-sol (Astra 68.1% still top); factual errors 11.4% → 7.7%. No independent results yet. "Ultrafast" mode (up to 8× generation speed in Codex) announced for the coming days | 1.05M (128K out) | 2 / 10 |
 | gpt-6-sol | FrontierCode 1.1 49.3% / 52.1% Xhigh (reported on Anthropic's Sonnet 5.5 page); no OpenAI-published coding numbers | 1.05M | 2 / 10 |
 | gpt-6-luna | none published yet | 1.05M | 0.10 / 0.50 |
 | gpt-6-astra | GPQA 96.0%, ARC-AGI-2 95.0%, BrowseComp 91.5%, Terminal-Bench 4.0 57.9%, OSWorld 2.0 72.6% partial | 1.05M | 10 / 50 |

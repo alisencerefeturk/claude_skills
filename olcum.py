@@ -35,6 +35,10 @@ COLS = {
              "e2e_gecen", "e2e_kalan", "kacan_hata", "kacan_aciklama", "kaynak_bulma_dk", "main_kirik_dk", "flaky",
              "kaynak", "not"],
 }
+for _k in COLS:  # veri sahibi: boş = bu makinenin sahibi; başkasından gelen satırda onun adı
+    COLS[_k].insert(COLS[_k].index("proje") + 1, "sahip")
+FORMAT = 1
+KLASOR = "olcum"  # her projede ve paylaşım paketinde aranan klasör adı; içinde olcum.json bulunur
 RISK = {"R0": 1, "R1": 1.5, "R2": 2, "R3": 3}
 BOYUT = {"S": 1, "M": 2, "L": 4}
 MIN_N = 5
@@ -303,9 +307,14 @@ def tablo(basliklar, satirlar):
     return "\n".join(out)
 
 
-def rapor_md(proje=None):
+def rapor_md(proje=None, sahip=None):
     parts = [f"# Ajan ölçüm raporu — {datetime.now():%Y-%m-%d}", ""]
-    flt = (lambda rows: [r for r in rows if r.get("proje") == proje]) if proje else (lambda rows: rows)
+    def flt(rows):
+        if proje:
+            rows = [r for r in rows if r.get("proje") == proje]
+        if sahip:
+            rows = [r for r in rows if (r.get("sahip") or "ben") == sahip]
+        return rows
 
     y = flt(read("yurutme"))
     g = defaultdict(list)
@@ -407,12 +416,162 @@ def md_to_html(md):
 
 
 def cmd_rapor(a):
-    md = rapor_md(a.proje)
+    md = rapor_md(a.proje, a.sahip)
     if a.html:
         Path(a.html).write_text(md_to_html(md), encoding="utf-8")
         print(f"yazıldı: {a.html}")
     else:
         print(md)
+
+
+# ---------- paylaşım: yayınla / topla / dışa aktar ----------
+
+import hashlib, shutil, tempfile
+
+SERBEST = ("not", "kacan_aciklama", "oturum_id", "test")  # serbest metin: anonim pakette atılır
+
+
+def h(x, n=8):
+    return hashlib.sha256(str(x).encode()).hexdigest()[:n]
+
+
+def satir_anahtar(rol, r):
+    if r.get("run_id"):
+        return (r.get("proje", ""), r.get("sahip", ""), r["run_id"])
+    return (r.get("proje", ""), r.get("sahip", ""), h(json.dumps([r.get(k, "") for k in COLS[rol]], ensure_ascii=False)))
+
+
+def paket_yaz(hedef, satirlar, proje_adi_, temiz, sahip=""):
+    hedef.mkdir(parents=True, exist_ok=True)
+    (hedef / "olcum.json").write_text(json.dumps(
+        {"arac": "ajan-olcum", "format": FORMAT, "proje": ("p-" + h(proje_adi_)) if temiz == "gizle" else proje_adi_, "sahip": sahip, "anonim": bool(temiz),
+         "olusturma": datetime.now().strftime("%Y-%m-%d")}, ensure_ascii=False, indent=2), encoding="utf-8")
+    for rol, rows in satirlar.items():
+        out = []
+        for r in rows:
+            r = dict(r)
+            if temiz:
+                for k in SERBEST:
+                    r.pop(k, None)
+                if r.get("gorev"):
+                    r["gorev"] = "g-" + h(r["gorev"])
+                if r.get("gorevler"):
+                    r["gorevler"] = "g-" + h(r["gorevler"])
+                if r.get("konu"):
+                    r["konu"] = "k-" + h(r["konu"])
+                if temiz == "gizle":
+                    r["proje"] = "p-" + h(r.get("proje", ""))
+            out.append(r)
+        with (hedef / f"{rol}.csv").open("w", newline="", encoding="utf-8") as f:
+            w = csv.DictWriter(f, fieldnames=COLS[rol], extrasaction="ignore")
+            w.writeheader()
+            for r in out:
+                w.writerow({k: r.get(k, "") for k in COLS[rol]})
+
+
+def kendi_satirlar(proje=None):
+    sonuc = {}
+    for rol in COLS:
+        sonuc[rol] = [r for r in read(rol) if not r.get("sahip") and (not proje or r.get("proje") == proje)]
+    return sonuc
+
+
+def cmd_yayinla(a):
+    """Bu projenin satırlarını <repo>/olcum/ altına yazar; git add/commit/push sende."""
+    repo = Path(a.repo).resolve()
+    proje = proje_adi(a.proje) if not a.proje else a.proje
+    veri = kendi_satirlar(proje)
+    n = sum(len(v) for v in veri.values())
+    if not n:
+        sys.exit(f"'{proje}' için satır yok")
+    paket_yaz(repo / KLASOR, veri, proje, "temiz" if a.temiz else "", a.sahip or "")
+    print(f"{n} satır yazıldı: {repo / KLASOR}  (commit/push sana ait; repo herkese açıksa --temiz kullan)")
+
+
+def cmd_disa_aktar(a):
+    proje = a.proje
+    veri = kendi_satirlar(proje)
+    hedef = Path(a.hedef or f"olcum-paylas-{datetime.now():%Y%m%d}")
+    paket_yaz(hedef, veri, proje or "tum-projeler", "gizle" if a.proje_gizle else "temiz", a.sahip or "")
+    print(f"anonim paket: {hedef}  (serbest metin atıldı, görev/konu adları özetlendi"
+          f"{', proje adları gizlendi' if a.proje_gizle else ''}). Gönderirken klasörü zipleyebilirsin.")
+
+
+def gh_oku(repo, dosya):
+    p = subprocess.run(["gh", "api", f"repos/{repo}/contents/{KLASOR}/{dosya}", "-H", "Accept: application/vnd.github.raw"],
+                       capture_output=True, text=True)
+    return p.stdout if p.returncode == 0 else None
+
+
+def birlestir(kaynak_dir_veya_dosyalar, sahip, etiket):
+    """{rol: csv metni} sözlüğünü merkeze ekler; yinelenenleri atar. (eklenen, atlanan) döner."""
+    eklenen = atlanan = 0
+    for rol, metin in kaynak_dir_veya_dosyalar.items():
+        if rol not in COLS or not metin:
+            continue
+        gelen = list(csv.DictReader(metin.splitlines()))
+        mevcut = read(rol)
+        var = {satir_anahtar(rol, r) for r in mevcut}
+        for r in gelen:
+            r["sahip"] = r.get("sahip") or sahip
+            r["kaynak"] = r.get("kaynak") or "topla"
+            k = satir_anahtar(rol, r)
+            if k in var:
+                atlanan += 1
+                continue
+            var.add(k)
+            mevcut.append(r)
+            eklenen += 1
+        write(rol, mevcut)
+    print(f"  {etiket}: +{eklenen} yeni, {atlanan} zaten vardı")
+    return eklenen, atlanan
+
+
+def cmd_topla(a):
+    """GitHub'daki repolardan ya da yerel klasörden olcum/ paketlerini merkeze toplar."""
+    toplam = 0
+    if a.klasor:
+        for d in a.klasor:
+            d = Path(d)
+            man = d / "olcum.json" if (d / "olcum.json").exists() else d / KLASOR / "olcum.json"
+            if not man.exists():
+                print(f"  {d}: olcum.json yok, atlandı")
+                continue
+            kok = man.parent
+            meta = json.loads(man.read_text(encoding="utf-8"))
+            sahip = a.sahip or meta.get("sahip") or d.name
+            toplam += birlestir({r: (kok / f"{r}.csv").read_text(encoding="utf-8") if (kok / f"{r}.csv").exists() else "" for r in COLS}, sahip, str(d))[0]
+    if a.github and not a.ben:
+        q = subprocess.run(["gh", "api", "user", "-q", ".login"], capture_output=True, text=True)
+        a.ben = q.stdout.strip()
+    repolar = list(a.repo or [])
+    if a.github:
+        p = subprocess.run(["gh", "repo", "list", a.github, "--limit", "500", "--json", "nameWithOwner,isArchived"],
+                           capture_output=True, text=True)
+        if p.returncode:
+            sys.exit("gh repo list başarısız: " + p.stderr.strip())
+        repolar += [x["nameWithOwner"] for x in json.loads(p.stdout) if not x["isArchived"]]
+    for repo in repolar:
+        man = gh_oku(repo, "olcum.json")
+        if man is None:
+            if a.repo:
+                print(f"  {repo}: olcum/olcum.json yok")
+            continue
+        try:
+            meta = json.loads(man)
+        except ValueError:
+            print(f"  {repo}: olcum.json bozuk, atlandı")
+            continue
+        if meta.get("arac") != "ajan-olcum" or meta.get("format") != FORMAT:
+            print(f"  {repo}: desteklenmeyen biçim ({meta.get('arac')}, format {meta.get('format')}), atlandı")
+            continue
+        sahip = a.sahip or meta.get("sahip") or repo.split("/")[0]
+        # kendi repomun paketini tekrar merkeze almayayım: sahip boş ve --kendi verilmediyse atla
+        if repo.split("/")[0] == a.ben and not a.kendi:
+            print(f"  {repo}: kendi repo, atlandı (merkez zaten bu veriyi içeriyor; --kendi ile zorla)")
+            continue
+        toplam += birlestir({r: gh_oku(repo, f"{r}.csv") or "" for r in COLS}, sahip, repo)[0]
+    print(f"toplam yeni satır: {toplam}")
 
 
 def main():
@@ -451,8 +610,32 @@ def main():
     l.add_argument("-n", type=int, default=10)
     l.set_defaults(f=cmd_liste)
 
+    y = sp.add_parser("yayinla", help="projenin satırlarını <repo>/olcum/ altına yaz")
+    y.add_argument("--repo", default=".")
+    y.add_argument("--proje")
+    y.add_argument("--sahip", help="pakete yazılacak ad (boş bırakılabilir)")
+    y.add_argument("--temiz", action="store_true", help="serbest metni at, görev adlarını özetle")
+    y.set_defaults(f=cmd_yayinla)
+
+    x = sp.add_parser("disa-aktar", help="başkasıyla paylaşmak için anonim paket üret")
+    x.add_argument("--proje", help="yalnız bu proje; verilmezse hepsi")
+    x.add_argument("--hedef")
+    x.add_argument("--sahip", help="paketi kimin adıyla göndereceksin")
+    x.add_argument("--proje-gizle", action="store_true", help="proje adlarını da özetle")
+    x.set_defaults(f=cmd_disa_aktar)
+
+    t = sp.add_parser("topla", help="GitHub repolarından / klasörlerden olcum/ paketlerini merkeze al")
+    t.add_argument("--github", help="kullanıcı ya da org; hepsinde olcum/olcum.json aranır")
+    t.add_argument("--repo", action="append", help="owner/name (tekrarlanabilir)")
+    t.add_argument("--klasor", action="append", help="yerel paket klasörü (başkasından gelen)")
+    t.add_argument("--sahip", help="gelen satırların sahibi olarak yazılacak ad")
+    t.add_argument("--ben", default=os.environ.get("OLCUM_BEN", ""), help="kendi GitHub kullanıcı adın (kendi repoları atlanır)")
+    t.add_argument("--kendi", action="store_true", help="kendi repolarını da al")
+    t.set_defaults(f=cmd_topla)
+
     p = sp.add_parser("rapor")
     p.add_argument("--proje")
+    p.add_argument("--sahip", help="yalnız bu sahibin satırları ('ben' = kendi satırların)")
     p.add_argument("--html", help="HTML dosyası yolu")
     p.set_defaults(f=cmd_rapor)
 

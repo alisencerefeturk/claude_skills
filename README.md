@@ -59,3 +59,21 @@ olcum rapor --html rapor.html
 - Codex çıktısında giriş/çıkış token ayrımı yok; toplam `not` sütununa `toplam_token=` olarak yazılır.
 - Maliyet yalnız Claude `--output-format json` çıktısından gelir.
 - Rapordaki model adı birleştirmesi (`ALIAS`) yalnız gösterimdedir; CSV ham kalır.
+
+## Paylaşım ve toplama
+
+Kalıp: projede `olcum/` klasörü = `olcum.json` + dört CSV. Komutlar:
+
+```bash
+olcum yayinla --repo . [--temiz]                 # projenin satırlarını olcum/ altına yaz (push sende)
+olcum topla --github KULLANICI                    # olcum/olcum.json olan tüm repoları merkeze al
+olcum topla --klasor gelen-paket --sahip ali      # başkasından gelen paketi al
+olcum disa-aktar --hedef paket --sahip ben [--proje-gizle]   # anonim paket üret
+olcum rapor --sahip ali                           # yalnız o kişinin verisi
+```
+
+`disa-aktar` serbest metni (`not`, `kacan_aciklama`, `oturum_id`, `test`) atar, görev/konu adlarını özetler. Yinelenen satırlar eklenmez.
+
+## Skill
+
+`skill/ajan-olcum/SKILL.md` herhangi bir Claude Code oturumuna ölçüm kalıbını öğretir. Kurulum: `ln -s ~/ajan-olcum/skill/ajan-olcum ~/.claude/skills/ajan-olcum`. Başkalarına: bu repoyu paylaş, aynı komutu çalıştırsınlar.

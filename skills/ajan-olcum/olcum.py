@@ -8,14 +8,14 @@ Komutlar:
   rapor   model × effort karşılaştırması (markdown, --html ile dosya)
   liste   son kayıtlar
 
-Veri klasörü: $OLCUM_HOME/data (varsayılan: bu dosyanın yanındaki data/).
+Veri klasörü: $OLCUM_HOME/data (varsayılan: ~/.ajan-olcum/data; repo dışında).
 """
 import argparse, csv, html, json, os, re, statistics, subprocess, sys, time, uuid
 from collections import defaultdict
 from datetime import datetime
 from pathlib import Path
 
-ROOT = Path(os.environ.get("OLCUM_HOME", Path(__file__).resolve().parent))
+ROOT = Path(os.environ.get("OLCUM_HOME", Path.home() / ".ajan-olcum"))
 DATA = ROOT / "data"
 
 COLS = {

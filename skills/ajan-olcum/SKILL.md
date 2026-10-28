@@ -5,7 +5,7 @@ description: Model/ajan karşılaştırma ölçümü (süre, token, maliyet, hat
 
 # ajan-olcum
 
-Aracın kendisi `olcum` komutu (`~/ajan-olcum/olcum.py`; kurulu değilse repo'yu klonla, README.md'ye bak). Standart ve sütunlar: `STANDART.md`. Veri merkezi: `$OLCUM_HOME/data` (varsayılan aracın yanındaki `data/`). Yalnız Python 3 gerekir.
+Araç `olcum` komutu (bu klasördeki `olcum.py`). `olcum` yoksa skills reposunun kökündeki `install.sh` çalıştırılır (komutu `~/.local/bin/olcum` olarak kurar). Standart ve sütunlar: `STANDART.md` (bu klasörde). Veri: `~/.ajan-olcum/data` (`$OLCUM_HOME` ile değişir); repoya konmaz. Yalnız Python 3 gerekir.
 
 ## Kalıp (herkes aynı biçimi kullanır)
 

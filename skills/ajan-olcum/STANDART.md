@@ -1,8 +1,8 @@
 # Ajan Ölçüm Standardı (proje bağımsız)
 
-Amaç: modelleri ve effort seviyelerini gerçek işte karşılaştırmak. Zor ve uzun işi yapan ajan ile kolay işi yapan ajan eşit tutulmaz; bütün sayılar işin **zorluk puanına (ZP)** bölünerek karşılaştırılır. Kullanım için [README.md](./README.md).
+Amaç: modelleri ve effort seviyelerini gerçek işte karşılaştırmak. Zor ve uzun işi yapan ajan ile kolay işi yapan ajan eşit tutulmaz; bütün sayılar işin **zorluk puanına (ZP)** bölünerek karşılaştırılır. Kullanım için [SKILL.md](./SKILL.md).
 
-Veri: `data/yurutme.csv` (uygulama), `review.csv`, `arastirma.csv`, `kapi.csv` (test kapısı). Her satırda `proje` sütunu vardır; aynı model farklı projelerde birleştirilip karşılaştırılabilir.
+Veri (`~/.ajan-olcum/data/`): `yurutme.csv` (uygulama), `review.csv`, `arastirma.csv`, `kapi.csv` (test kapısı). Her satırda `proje` sütunu vardır; aynı model farklı projelerde birleştirilip karşılaştırılabilir.
 
 **Otomatik olanlar** (`olcum run`): tarih, proje, run_id, süre, token (giriş/çıkış/önbellek), maliyet, oturum kimliği, tur (Claude), değişen satır ve dosya. **Elle verilenler:** ZP girdileri (dağıtım anında) ve hata sayaçları (review/E2E sonrası, `olcum bitir`).
 

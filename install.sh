@@ -12,4 +12,7 @@ for d in "$REPO"/skills/*/; do
     chmod +x "$HOME/.local/bin/olcum"
     echo "komut kuruldu: olcum (PATH'te ~/.local/bin olmalı)"
   fi
+  if [ -x "$d/install.sh" ]; then
+    "$d/install.sh"
+  fi
 done

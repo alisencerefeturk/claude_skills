@@ -52,10 +52,10 @@ Requirements: Claude Code on a Pro or Max plan (Pro/Max accounts are the only on
 Paste this into a Claude Code session:
 
 ````text
-Install the opus-orchestration skill from https://github.com/alisencerefeturk/opus-orchestration for me:
+Install the opus-orchestration skill from my skills repo (<skills-repo-url>, folder skills/opus-orchestration) for me:
 
-1. Clone the repo to ~/opus-orchestration. If that folder already exists and is this repo, run `git pull` in it instead.
-2. Run ./install.sh from the repo. It symlinks the skill, the agent presets, and statusline.sh into ~/.claude and backs up any existing files first.
+1. Clone the repo to ~/skills. If that folder already exists and is this repo, run `git pull` in it instead.
+2. Run ./install.sh from the repo root. It links every skill; for opus-orchestration it also symlinks the skill, the agent presets, and statusline.sh into ~/.claude and backs up any existing files first.
 3. Add "statusLine": {"type": "command", "command": "~/.claude/statusline.sh"} to ~/.claude/settings.json. Merge it and keep every other setting as is. If a different statusLine is already configured, show it to me and ask before replacing it.
 4. Check the prerequisites and report each one: `python3 --version`, `codex --version`, and whether Codex is logged in (`codex login status`). If something is missing, tell me how to fix it, but don't install it yourself.
 5. Tell me to restart Claude Code, then summarize what was installed and anything I still need to do by hand.
@@ -64,9 +64,10 @@ Install the opus-orchestration skill from https://github.com/alisencerefeturk/op
 ### Option B: manual
 
 ```bash
-git clone https://github.com/alisencerefeturk/opus-orchestration.git
-cd opus-orchestration
-./install.sh
+git clone <skills-repo-url> ~/skills
+~/skills/install.sh                              # every skill
+# or only this one:
+~/skills/skills/opus-orchestration/install.sh
 ```
 
 `install.sh` symlinks the files into `~/.claude`, moving any existing files to `~/.claude/backups/opus-orchestration-<timestamp>/` first. Because they are symlinks, edits from either side show up in `git diff`.

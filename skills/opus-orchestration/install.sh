@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Symlink this repo's skill, agent presets and statusline script into ~/.claude,
+# Symlink this skill folder, agent presets and statusline script into ~/.claude,
 # so edits made in either place are tracked by git. Existing files are moved
 # to ~/.claude/backups/opus-orchestration-<timestamp>/ first — outside skills/
 # and agents/, so Claude Code doesn't load the backups as duplicates.
@@ -26,7 +26,7 @@ link() {
   echo "linked   $dst -> $src"
 }
 
-link "$REPO/skills/opus-orchestration" "$CLAUDE_DIR/skills/opus-orchestration"
+link "$REPO" "$CLAUDE_DIR/skills/opus-orchestration"
 link "$REPO/agents/sonnet-worker.md"   "$CLAUDE_DIR/agents/sonnet-worker.md"
 link "$REPO/agents/haiku-worker.md"    "$CLAUDE_DIR/agents/haiku-worker.md"
 for a in sonnet-worker-high opus-worker opus-worker-high; do

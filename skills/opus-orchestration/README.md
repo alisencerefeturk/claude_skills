@@ -7,21 +7,22 @@ A [Claude Code](https://claude.com/claude-code) skill and agent presets for runn
 | Tier | Where it runs | Role |
 |---|---|---|
 | **Opus (manager)** | main Claude Code session | Talks to the user, classifies and splits tasks, picks each worker's model and effort, synthesizes worker reports. The only dispatcher. |
-| **Luna** (`gpt-6-luna`) | Codex CLI | Default executor for simple and medium work: bulk, research, exploration, scoped implementation. |
-| **Sol** (`gpt-6-sol`) | Codex CLI | Precision execution against a complete spec. |
+| **Luna** (`gpt-6-luna`) | Codex CLI | Research, exploration, bulk and mechanical work, small low-risk code with a complete spec. |
+| **Sol** (`gpt-6.1-sol`) | Codex CLI | Default executor for medium-tier code and precision work against a complete spec. |
 | **Astra** (`gpt-6-astra`) | Codex CLI | Hard reasoning only. It burns quota fastest. |
-| **Sonnet** | `sonnet-worker`, `sonnet-worker-high` presets | Claude-side tools, second-opinion review, fallback when GPT fails. |
+| **Sonnet** | `sonnet-worker`, `sonnet-worker-high` presets | Claude-side tools, cross-family review of GPT code, fallback when GPT fails. |
 | **Opus workers** | `opus-worker`, `opus-worker-high` presets | Detailed judgment-heavy work, highest-stakes and extra isolated reviews. |
 | **Haiku** | `haiku-worker` preset | Fallback only, for simple work when GPT is unavailable. |
 
 Key ideas:
 
 - **Manager / worker.** You talk only to the top-level Opus session; workers report back to it when they finish.
+- **Asks once per project.** The first time it runs in a project without an execution-regime section, the manager asks a few setup questions (executor lane, risk tiers, measurement, commit attribution) and writes the answers to the project's `AGENTS.md`. You don't need to remember the options.
 - **Delegation is one level deep.** Only Opus dispatches work, so every call is auditable.
 - **Effort is chosen per task.** The manager picks each worker's effort (Codex `model_reasoning_effort`, or the preset's `effort`).
-- **Claude quota is read live.** `statusline.sh` writes it to `~/.claude/rate-limit-status.json` on every message, and Claude-side worker use (Sonnet and Opus) is gated on it.
-- **Review family follows risk.** High-risk changes are reviewed by the other model family; routine work relies on tests and CI (rule 9, backed by Greptile's 2026 cross-family data).
-- **Routing follows data.** It is based on published benchmarks and a small Luna-vs-Sonnet head-to-head (see "Benchmark basis" and rule 5 in `SKILL.md`).
+- **Claude quota is read live.** `statusline.sh` writes it to `${CLAUDE_CONFIG_DIR:-~/.claude}/rate-limit-status.json` on every message, and Claude-side worker use (Sonnet and Opus) is gated on it.
+- **Review family follows risk.** R2/R3 changes are reviewed by the other model family; routine work relies on tests, CI and break-it checks (rule 9, backed by Greptile's 2026 cross-family data).
+- **Routing follows data.** Executor choice is based on field data from a real project (error density per difficulty point) plus published benchmarks, both in `reference/evidence.md`. With the optional `ajan-olcum` measurement skill (separate, not part of this repo), every dispatch is measured and `olcum rapor` keeps that data current.
 
 The tier labels in the skill are Turkish: **basit** = simple, **orta** = medium, **zor** = hard.
 
@@ -29,6 +30,10 @@ The tier labels in the skill are Turkish: **basit** = simple, **orta** = medium,
 
 ```
 skills/opus-orchestration/SKILL.md   the policy (loaded as a Claude Code skill)
+skills/opus-orchestration/reference/ details read on demand: codex.md (commands, pitfalls),
+                                     review.md (review protocol, severity, verdicts),
+                                     project-setup.md (setup questions, AGENTS.md template),
+                                     evidence.md (field data, benchmarks, review study)
 agents/sonnet-worker.md              Sonnet preset (medium effort)
 agents/sonnet-worker-high.md         Sonnet preset (high effort)
 agents/opus-worker.md                Opus worker preset (medium effort)

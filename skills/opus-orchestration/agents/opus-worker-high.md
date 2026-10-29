@@ -13,7 +13,7 @@ Your job, depending on what you were asked:
 - **Context-gathering**: explore, map, research with a loose brief — the deliverable is understanding, not a diff. Report back concisely: findings, not a transcript of how you found them.
 - **Execution against a spec**: if you were given a spec, follow it — flag ambiguity rather than guessing on anything consequential.
 - **Isolated review**: if you were asked to review, you see only what the prompt gives you (task contract, diff, test output). Don't ask for the author's reasoning. Split findings into P0/P1 (bugs) and P2/P3 (improvements, style); back every P0/P1 with a failing test, repro steps, or a concrete `file:line` + input → wrong output, or downgrade it to P2.
-- **Spec drafting for GPT lanes**: if the work would be better executed by a GPT model (Sol for precise execution, Luna for bulk work), write a complete, self-contained spec and return it in your report. Re-read it once before returning; Sol and Luna execute literally and do not fill gaps. The orchestrator reviews and dispatches it.
+- **Spec drafting for GPT lanes**: if the work would be better executed by a GPT model (Sol for code and precise execution, Luna for research and bulk work), write a complete, self-contained spec and return it in your report. Re-read it once before returning; Sol and Luna execute literally and do not fill gaps. The orchestrator reviews and dispatches it.
 
 Hard limits:
 

@@ -229,6 +229,39 @@ risk picks the review and how much the human must sign off.
    fully specified. Opus always owns final integration on this tier.
 5. Review and sign-off follow the risk tier (rule 9 and the tier table).
 
+## Merging parallel work: gates
+
+Branches that are green on their own can break once merged (migration
+order, shared fixtures, a test selector matching a new label). The manager
+owns merging and runs the gates; command names come from the project.
+
+- **One writer per file set.** Each executor works in its own worktree and
+  task branch. "Same files" also covers shared modules, schema files, the
+  migration sequence number, entry-point manifests and shared test
+  fixtures/config: two tasks that both need one of them run in sequence, or
+  the shared part is merged first as its own small task.
+- **Cheap gate before every merge, on the merged candidate.** Merge current
+  `main` into the branch first; a green result on an old base doesn't count.
+  Run format, lint, typecheck, unit tests, the E2E files for what the branch
+  touched, and migration tests when it touches the database. Executor specs
+  list the same gates, migration tests included.
+- **Full gate** (all unit + migration + full E2E, every target browser): on
+  accumulated `main` once a day (twice on busy days), recording the commit
+  it ran on.
+- **Full gate always, before the merge:** before a deploy (on the commit to
+  be deployed); for R2/R3 work; for changes to shared test infrastructure,
+  shared components, user-visible text or selectors, routing, or
+  dependencies.
+- **If the full gate breaks:** stop merging, bisect the merges since the
+  last green gate, and nothing counts as done until `main` is green again.
+  Rerun a failing test once to separate flaky from broken; note flaky tests.
+- **Test habits that prevent merge breaks:** select by label with exact
+  matching; tests that write shared state (rate-limit buckets, global
+  settings, ports) clean it up afterwards; E2E runs pick free ports.
+- With measurement on, record each full gate (`olcum add kapi ...`): merges
+  covered, result, and breaks the cheap gate missed. That count tells
+  whether the full gate can run less often or must run more.
+
 ## Measurement (when the project uses `ajan-olcum`)
 
 `ajan-olcum` is a separate skill and CLI (`olcum`) that records every

@@ -7,6 +7,7 @@ Claude Code skill koleksiyonu. Her skill `skills/<ad>/` altında, giriş dosyas�
 | [ajan-olcum](skills/ajan-olcum/SKILL.md) | Ajan/model karşılaştırma ölçümü: kayıt, rapor, projelerden toplama, paylaşım |
 | [opus-orchestration](skills/opus-orchestration/README.md) | Claude Pro + ChatGPT Plus için yönetici/işçi dağıtım politikası, ajan preset'leri, kota statusline'ı |
 | [team-orchestration](skills/team-orchestration/README.md) | Şirket Claude Team koltuğu için tek hesaplı yönetici/işçi politikası (GPT yok), `team-*` ajan preset'leri |
+| [proje-kur](skills/proje-kur/SKILL.md) | Yeni ya da mevcut projeye ajan düzeni kurar (AGENTS, CLAUDE, devir notu, kararlar; hafif / standart / tam profil); oturum sonunda devir notu yazar |
 
 ## Kurulum
 

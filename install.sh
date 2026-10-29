@@ -1,11 +1,21 @@
 #!/bin/sh
-# Bu repodaki bütün skills/* klasörlerini ~/.claude/skills altına bağlar; araçlı skill'ler için komutu kurar.
+# Bu repodaki skills/* klasörlerini Claude yapılandırma klasörüne bağlar; araçlı skill'ler için komutu kurar.
+# Argümansız hepsini kurar; ad verilirse yalnız onları: ./install.sh team-orchestration ajan-olcum
+# Hedef: $CLAUDE_DIR, yoksa $CLAUDE_CONFIG_DIR, yoksa ~/.claude.
 set -e
 REPO="$(cd "$(dirname "$0")" && pwd)"
-mkdir -p "$HOME/.claude/skills" "$HOME/.local/bin"
+CLAUDE_DIR="${CLAUDE_DIR:-${CLAUDE_CONFIG_DIR:-$HOME/.claude}}"
+export CLAUDE_DIR
+for n in "$@"; do
+  [ -d "$REPO/skills/$n" ] || { echo "böyle bir skill yok: $n" >&2; exit 1; }
+done
+mkdir -p "$CLAUDE_DIR/skills" "$HOME/.local/bin"
 for d in "$REPO"/skills/*/; do
   n="$(basename "$d")"
-  ln -sfn "${d%/}" "$HOME/.claude/skills/$n"
+  if [ $# -gt 0 ]; then
+    case " $* " in *" $n "*) ;; *) continue ;; esac
+  fi
+  ln -sfn "${d%/}" "$CLAUDE_DIR/skills/$n"
   echo "skill bağlandı: $n"
   if [ -f "$d/olcum.py" ]; then
     printf '#!/bin/sh\nexec python3 "%s/olcum.py" "$@"\n' "${d%/}" > "$HOME/.local/bin/olcum"

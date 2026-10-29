@@ -91,8 +91,8 @@ Not looked at: <what was out of reach, or "none">
 "Looked at / Not looked at" keeps an ACCEPT honest: it says what was
 reviewed, so "no problem found" is never mistaken for "everything checked".
 A malformed review (missing header, prose-wrapped result) is not repaired by
-the manager; the reviewer is re-run fresh. The counts feed
-`olcum bitir` directly when measurement is on.
+the manager; the reviewer is re-run fresh. The counts are what
+`olcum bitir` needs when measurement is on (copied by the manager; the tool does not parse the header yet).
 
 ## 7. Reserve the review before spending the quota
 

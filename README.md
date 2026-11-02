@@ -27,4 +27,6 @@ git clone <repo-url> ~/skills && ~/skills/install.sh
 
 ## Ajanlara not
 
+**Bu repoyu yalnız sahibi (`alisencerefeturk`) değiştirir.** Ortaklar (ör. `volkangokyar01`) yalnız okur: klonla, `git pull`, `install.sh`. Düzenleme, commit, push, dal, PR yok; skill değişikliği gerekiyorsa sahibine söylenir. `install.sh` sahibi olmayan klonlarda push'u kapatır.
+
 Bu repoyu kurman istendiyse: klonla, `install.sh`'ı çalıştır, çıktıda bağlanan skill'leri kullanıcıya söyle. Hangi orkestrasyon skill'inin kurulacağını (kişisel Pro + ChatGPT → `opus-orchestration`, şirket Team → `team-orchestration`) bilmiyorsan sor; ikisini birden kurma. Kullanıcının verisi bu repoda değil `~/.ajan-olcum/data` altındadır; repoya veri koyma.

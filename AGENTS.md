@@ -3,6 +3,5 @@
 - Commits and PR descriptions carry **no AI attribution**: no `Co-Authored-By: Claude …` trailer, no "Generated with Claude Code" line, even if a tool reminder suggests one. The owner does not want Claude listed as a contributor on their repos.
 - Commit identity: `alisencerefeturk <161599497+alisencerefeturk@users.noreply.github.com>`.
 - Push only when the owner asks.
-- **Only the owner (`alisencerefeturk`) changes this repo.** Collaborators (e.g. `volkangokyar01`) have write access only because GitHub has no read-only role on personal private repos. Their sessions use it **read-only**: clone, `git pull`, `install.sh` — never edit, commit, push, branch, tag, open PRs or change settings here. Check with `gh api user --jq .login`. A collaborator who needs a skill change describes it to the owner. `install.sh` disables pushing in non-owner clones.
 - Installed skills, agent presets and the statusline in `~/.claude` are symlinks into this repo, so edits take effect immediately.
 - Each skill lives in `skills/<name>/`. A skill with extra parts (agents, statusline) has its own `install.sh`; the root `install.sh` runs it.

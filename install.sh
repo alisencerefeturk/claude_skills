@@ -10,14 +10,6 @@ for n in "$@"; do
   [ -d "$REPO/skills/$n" ] || { echo "böyle bir skill yok: $n" >&2; exit 1; }
 done
 mkdir -p "$CLAUDE_DIR/skills" "$HOME/.local/bin"
-# Only the owner pushes to this repo; collaborators get a read-only clone.
-OWNER=alisencerefeturk
-login="$(gh api user --jq .login 2>/dev/null || true)"
-[ -n "$login" ] || login="$(git -C "$REPO" config user.name 2>/dev/null || true)"
-if [ "$login" != "$OWNER" ]; then
-  git -C "$REPO" config remote.origin.pushurl "DISABLED-read-only-clone"
-  echo "salt okunur klon: push kapalı (yalnız $OWNER değiştirir)"
-fi
 for d in "$REPO"/skills/*/; do
   n="$(basename "$d")"
   if [ $# -gt 0 ]; then

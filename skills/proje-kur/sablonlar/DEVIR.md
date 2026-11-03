@@ -1,6 +1,6 @@
 # {{PROJE_ADI}} — devir notu
 
-> Yeni oturum (bu makine, başka makine, Codex, ikinci hesap) **önce bunu okur**, sonra [`AGENTS.md`](../AGENTS.md)'ye uyar. Her anlamlı adımdan sonra güncellenir. Geçmiş: [`DEVIR-gunluk.md`](DEVIR-gunluk.md).
+> Yeni oturum (bu makine, başka makine, Codex, ikinci hesap) **önce bunu okur**, sonra [`AGENTS.md`](../AGENTS.md)'ye uyar. Durum değişen her turun sonunda bir kez güncellenir. Geçmiş: [`DEVIR-gunluk.md`](DEVIR-gunluk.md).
 
 **Son güncelleme:** {{TARIH}} {{SAAT}} (Europe/Istanbul) — {{KIM}}
 

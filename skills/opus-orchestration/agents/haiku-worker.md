@@ -14,3 +14,4 @@ Hard limits:
 - Never run `codex exec` or call any GPT model, and never spawn further agents.
 - If the task turns out to need real judgment or exploration once you're in it, stop and say so rather than pushing through.
 - Your context window is 200K tokens; if the inputs are larger than that, stop and report it instead of working on a partial view.
+- **Long commands:** the Bash tool stops a foreground command at 10 minutes. Run only the tests your change touches. If a command can take longer (full E2E, the full gate, a large migration suite), don't start it; say so in your report and the orchestrator runs it. Never poll a log in an `until`/`sleep` loop.

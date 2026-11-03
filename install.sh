@@ -21,6 +21,7 @@ for d in "$REPO"/skills/*/; do
     printf '#!/bin/sh\nexec python3 "%s/olcum.py" "$@"\n' "${d%/}" > "$HOME/.local/bin/olcum"
     chmod +x "$HOME/.local/bin/olcum"
     echo "komut kuruldu: olcum (PATH'te ~/.local/bin olmalı)"
+    echo "uzama ölçümü için (isteğe bağlı): olcum kanca kur && olcum oturum tara --gun 7"
   fi
   if [ -x "$d/install.sh" ]; then
     "$d/install.sh"

@@ -1,6 +1,6 @@
 ---
 name: ajan-olcum
-description: Model/ajan karşılaştırma ölçümü (süre, token, maliyet, hata, zorluk puanı). Kullan: bir ajan/alt ajan/codex/claude -p dağıtırken kayıt tutmak, iş bitince hata sonuçlarını işlemek, model karşılaştırma raporu çıkarmak, GitHub'daki projelerin olcum/ klasörlerini toplamak, ölçüm verisini paylaşmak ya da başkasının verisini içeri almak. "ölçüm", "kıyas", "hangi model daha iyi", "olcum klasörlerini topla" gibi isteklerde tetiklenir.
+description: Model/ajan karşılaştırma ölçümü (süre, token, maliyet, hata, zorluk puanı). Kullan: bir ajan/alt ajan/codex/claude -p dağıtırken kayıt tutmak, iş bitince hata sonuçlarını işlemek, model karşılaştırma raporu çıkarmak, GitHub'daki projelerin olcum/ klasörlerini toplamak, ölçüm verisini paylaşmak ya da başkasının verisini içeri almak, oturumların/skill'lerin işi uzatıp uzatmadığını oturum kayıtlarından ölçmek. "ölçüm", "kıyas", "hangi model daha iyi", "olcum klasörlerini topla", "uzama", "döngüye giriyor mu", "oturum raporu" gibi isteklerde tetiklenir.
 ---
 
 # ajan-olcum
@@ -9,7 +9,7 @@ Araç `olcum` komutu (bu klasördeki `olcum.py`). `olcum` yoksa skills reposunun
 
 ## Kalıp (herkes aynı biçimi kullanır)
 
-Bir projenin paylaşılabilir ölçümü `olcum/` klasörüdür: `olcum.json` (`{"arac":"ajan-olcum","format":1,"proje":...,"sahip":...}`) + `yurutme.csv`, `review.csv`, `arastirma.csv`, `kapi.csv`. GitHub'da toplama bu `olcum/olcum.json` dosyasını arar. `format` uyuşmayan paket atlanır.
+Bir projenin paylaşılabilir ölçümü `olcum/` klasörüdür: `olcum.json` (`{"arac":"ajan-olcum","format":1,"proje":...,"sahip":...}`) + `yurutme.csv`, `review.csv`, `arastirma.csv`, `kapi.csv`, `oturum.csv`. GitHub'da toplama bu `olcum/olcum.json` dosyasını arar. `format` uyuşmayan paket atlanır.
 
 ## 1. Ajan dağıtırken kaydet
 
@@ -56,13 +56,30 @@ olcum yayinla --repo . --proje <ad> [--temiz]
 
 Yalnız `olcum/` klasörünü yazar. **Commit ve push'u kullanıcı ister.** Önce `gh repo view --json isPrivate` ile depo görünürlüğüne bak; herkese açıksa `--temiz` (serbest metin `not`, `kacan_aciklama`, `oturum_id`, `test` atılır, görev/konu adları özetlenir) kullan ya da kullanıcıya sor.
 
-## 6. Başkasıyla paylaş
+## 6. Oturum uzama ölçümü (transcript'ten, modele yük yok)
+
+Skill'lerin işi uzatıp uzatmadığını Claude Code oturum kayıtlarından (`~/.claude/projects/**/*.jsonl`) ölçer. Ajan hiçbir şey kaydetmez; kayıtlar sonradan okunur.
+
+```bash
+olcum oturum tara --gun 7     # son 7 günün oturumlarını oturum.csv'ye ekler (tekrar koşmak güvenli)
+olcum kanca kur               # isteğe bağlı: her tur bitince arka planda tarar (settings.json'a Stop kancası, yedekli)
+olcum oturum rapor --gun 7    # skill bağlamına göre istek başına süre/API/token, uzama işaretleri, alt ajanlar
+olcum kanca kaldir
+```
+
+- Satır: ana oturumun bir turu (kullanıcı istemi, işçi bildirimi, alt ajan dönüşü) ya da bir alt ajanın koşusu. Aynı `istek_no` bir kullanıcı isteğine bağlı her şeyi toplar.
+- Uzama işaretleri: aynı çağrının tekrarı, art arda hata, `sleep`/`until` yoklaması, Bash'in 10 dk sınırına çarpma, işçiye ek tur (`devam`), devir/checkpoint/kota/olcum dosyalarına giden çağrı payı (`defter`), bağlam sıkıştırma.
+- "Bağlam" o isteğe kadar oturumda yüklenen skill'lerdir. Görevler farklı olduğu için bağlamlar arası fark yönlüdür; skill'in etkisini kanıtlamaz.
+- `istem_ozet` (istemin ilk 80 karakteri) yalnız yerelde kalır; `disa-aktar` ve `yayinla --temiz` onu ve `oturum_id`'yi atar. Paylaşılan raporda proje adlarını da gizlemek için `olcum oturum rapor --gizli`.
+- Transcript'ler Claude Code'da varsayılan 30 gün tutulur; kanca kurulu değilse bu süre dolmadan `tara` koşulmalı.
+
+## 7. Başkasıyla paylaş
 
 ```bash
 olcum disa-aktar --hedef paket --sahip <adın> [--proje P] [--proje-gizle]
 ```
 
-Anonim paket üretir (serbest metin atılır, görev adları özetlenir; `--proje-gizle` proje adlarını da). Kullanıcı klasörü zipleyip gönderir. Alıcı: `olcum topla --klasor paket`. Gönderme ve yayınlama kullanıcının kararıdır; paketi kendin gönderme/push etme.
+Anonim paket üretir; oturum ölçümü (`oturum.csv`) da içindedir (serbest metin atılır, görev adları özetlenir; `--proje-gizle` proje adlarını da). Kullanıcı klasörü zipleyip gönderir. Alıcı: `olcum topla --klasor paket`. Gönderme ve yayınlama kullanıcının kararıdır; paketi kendin gönderme/push etme.
 
 ## Dikkat
 

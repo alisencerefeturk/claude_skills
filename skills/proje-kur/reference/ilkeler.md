@@ -26,6 +26,9 @@ Her kural, kullanıcının projelerinde yaşanmış bir olaydan gelir. Uyarlamad
 9. **Saat `date` ile alınır; "dün/yarın" yazılmaz.** Devir notu başka bir gün, başka bir makinede okunur; göreli tarih o gün yanlış anlam taşır.
 10. **Sunucuda ajan kendi hesabını kullanır ve yalnız kendi projesine dokunur.** VDS'de birden çok proje çalışır (Satın Alma, pano, arc siteleri). Kural pano'dan ve sunucu-bakim'den geldi.
 11. **Uyarlamada hiçbir dosyanın üstüne yazılmaz.** Mevcut dosyalar kullanıcının birikmiş kararlarını taşır. Var olan bir karşılığın (STATUS.md, CYCLE_LOG) yanına ikinci bir devir dosyası açılırsa iki kaynak birbiriyle çelişir.
-12. **Profil projeye göre seçilir.**
+12. **Devir turda bir kez yazılır; ikinci checkpoint dosyası tutulmaz.**
+   - Kanıt: 27.10–03.11.2026 haftasında pano'nun 59 commit'inin 22'si devir/belge commit'iydi. Aynı projede `DEVIR.md` ile `.orchestration-checkpoint.md` birlikte güncelleniyordu (bir haftalık oturum kayıtlarında DEVIR dosyasına dokunan ~110, checkpoint dosyasına dokunan 32 araç çağrısı). Satın Alma'da araç çağrılarının %22–37'si devir, döngü kaydı, karar ve ölçüm dosyalarına gitti (`olcum oturum rapor`).
+   - Oturum koparsa en çok bir turun durumu kaybolur, o tur da oturum kaydında durur. Her ara adımda yazmak bunun için fazla bedeldir.
+13. **Profil projeye göre seçilir.**
    - sunucu-bakim 40 satırlık bir AGENTS.md ile sorunsuz yürüyor; görev sözleşmesi ve review klasörü orada yalnız yük olurdu.
    - Satın Alma'da (para, yetki, kişisel veri) görev sözleşmesi, R0–R3 ve kırma demosu hataları erken yakaladı.

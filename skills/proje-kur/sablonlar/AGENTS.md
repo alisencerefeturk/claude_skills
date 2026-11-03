@@ -25,9 +25,10 @@ Bu depoda çalışan bütün yapay zekâ oturumları ve ajanlar (Claude Code, Co
 4. DEVIR'de "çalışıyor" görünen işçi varsa çıktısına bakmadan aynı işi yeniden başlatma.
 5. Kullanıcıya 1–2 cümleyle "nerede kaldık, şimdi ne yapacağım" de. Kullanıcı istemedikçe "sıradaki işler"i kendiliğinden başlatma.
 
-## Devir (her anlamlı adımda ve oturum sonunda)
+## Devir (durum değişen turun sonunda ve oturum sonunda)
 
-- Anlamlı adım: işçi başladı ya da bitti, karar alındı, yayın yapıldı, kullanıcı yeni iş ya da geri bildirim verdi.
+- Durum değişikliği: işçi başladı ya da bitti, karar alındı, yayın yapıldı, kullanıcı yeni iş ya da geri bildirim verdi. Bir turda kaç değişiklik olursa olsun devir **turun sonunda bir kez** yazılır; ara adımda yazılmaz. Ayrı bir checkpoint dosyası (`.orchestration-checkpoint.md`) tutulmaz, devir dosyası odur.
+- Devir değişikliği o turun iş commit'ine girer; yalnız belge değişen turda tek `Devir notu:` commit'i açılır.
 - `docs/DEVIR.md` "▶ BURADAN DEVAM ET" yalnız **şu anki** durumu anlatır ve her seferinde üstüne yazılır. Biten işin ayrıntısı (dosyalar, commit'ler, doğrulama) `docs/DEVIR-gunluk.md`'nin en üstüne taşınır.
 - Saat `date` ile alınır (Europe/Istanbul); "dün/yarın" yazılmaz; dosya yolları tam yazılır. Bilinmeyen şey "doğrulanmadı" diye yazılır, uydurulmaz.
 - Oturum kapanmadan ya da kota %85'i geçmeden önce devir yazılır. Claude Code'da "devir yaz" → `proje-kur` skill'i.

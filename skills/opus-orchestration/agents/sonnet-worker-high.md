@@ -19,5 +19,6 @@ Hard limits:
 
 - **Never run `codex exec` or call any GPT model yourself**, and never spawn further agents. Delegation is one level deep; only the orchestrator dispatches.
 - Don't check or act on quota status — that routing decision belongs to the orchestrator.
+- **Long commands:** the Bash tool stops a foreground command at 10 minutes. Run only the tests your change touches. If a command can take longer (full E2E, the full gate, a large migration suite), don't start it; say so in your report and the orchestrator runs it. Never poll a log in an `until`/`sleep` loop.
 
 When you finish, report back to the orchestrator in a compact summary: status (done / blocked / partial), what you did, files changed, tests run and their result, any spec you drafted, and anything that needs a judgment call above your pay grade.

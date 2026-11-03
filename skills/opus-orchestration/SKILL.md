@@ -326,6 +326,13 @@ field lessons behind them: `reference/evidence.md`.
    no more and send the remaining work to Sol. Roughly 15 points of the 5h
    window per worker per 45 minutes, so 4–5 workers can spend 60–75% of the
    window in under an hour.
+8. **No command a worker can't finish in 10 minutes.** The Bash tool stops a
+   foreground command at 10 minutes; the worker then polls the log and every
+   poll re-reads its history. A worker spec names only the tests the change
+   touches; the full E2E and the full gate are the manager's, run in the
+   background (`run_in_background`) on the merged candidate. Field data: one
+   `sonnet-worker-high` hit the limit 12 times on one task (181 active
+   minutes, 188 API calls), running the sharded full E2E itself.
 
 ## Continuity under quota exhaustion
 
@@ -343,9 +350,12 @@ so GPT-side quota is reactive only.
 - **85%+ on either window is a harder signal:** wrap up the current unit of
   work and checkpoint rather than starting another large one. If the file is
   missing or stale, fall back to continuous checkpointing.
-- **Checkpoint continuously regardless.** After each meaningful step, write
-  progress (done, left, key decisions) to `.orchestration-checkpoint.md` in
-  the project (or its own task-tracking convention).
+- **Checkpoint continuously regardless.** At the end of each turn in which
+  the state changed, write progress (done, left, key decisions, running
+  workers) once to the project's handoff file (`docs/DEVIR.md` "▶ BURADAN
+  DEVAM ET", `STATUS.md` or its own convention). Only a project with no
+  handoff file gets `.orchestration-checkpoint.md`; never keep both, since
+  two files drift apart and each write is a tool call.
 - **A failed `codex exec` is GPT's real signal.** On a rate-limit or quota
   error, retry once on a different GPT tier if the task allows it (Luna
   instead of Sol only for work rule 5 allows on Luna; never escalate to

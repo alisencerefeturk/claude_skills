@@ -80,7 +80,15 @@ Ortak: `tarih`, `proje`, `run_id`, `kaynak` (canli/geriye-donuk), `not`. Otomati
 
 **kapi.csv:** `saat`, `commit`, `kapsadigi_birlestirme`, `gorevler`, `sonuc`, `unit`, `migration`, `e2e_gecen`, `e2e_kalan`, `kacan_hata`, `kacan_aciklama`, `kaynak_bulma_dk`, `main_kirik_dk`, `flaky`.
 
-## 6. Veri kuralları
+## 6. Oturum uzama ölçümü (`oturum.csv`)
+
+Claude Code transcript'lerinden `olcum oturum tara` (ya da Stop kancası) üretir; elle satır girilmez. Satır = ana oturumun bir turu ya da bir alt ajan koşusu (`tetik`: human / task_notification / peer / alt-ajan).
+
+**oturum.csv:** `saat`, `oturum_id`, `oturum_kodu` (oturum kimliğinin özeti; anonim pakette gruplama bununla), `istek_no`, `tur_no`, `tetik`, `ajan_tipi`, `model`, `effort`, `sure_sn` (alt ajanda yönetici mesajı beklenen süre düşülür), `api_cagri`, `arac`, `arac_dagilim`, `tekrar` (aynı araç + aynı girdi), `ayni_dosya_max`, `hata`, `hata_seri`, `bekleme` (sleep/until/yoklama), `zaman_asimi` (≥ 590 sn süren ya da arka plana atılan Bash), `devam` (alt ajana sonradan gelen yönetici mesajı), `defter` (DEVIR/checkpoint/KARARLAR/CYCLE_LOG/STATUS/kota/olcum dosyasına dokunan çağrı), `uygulama_arac` (masaüstü uygulamasının plan/özet araçları ve ToolSearch), `ref_okuma` (skill reference dosyası okuma), `ajan`, `codex`, `skill_tur`, `skill_oturum`, `token_giris`, `token_cache_okuma`, `token_cache_yazma`, `token_cikis`, `baglam_max`, `sikistirma`, `kesinti`, `istem_uzunluk`, `istem_ozet` (yalnız yerel).
+
+Okuma: bağlamlar (skill yok / orkestrasyon / proje-kur) farklı işleri kapsar. Sonuç yönlüdür. Bir skill değişikliğinin etkisi, aynı kişinin değişiklikten önceki ve sonraki haftası karşılaştırılarak okunur.
+
+## 7. Veri kuralları
 
 - Sayaç sütunları (`review_p1` … `p2`) **boşsa "bilinmiyor"**, 0 ise "hata yok" demektir. Hata yok ise 0 yazılır. Rapor boş sayaçlı satırı hata yoğunluğu ortalamasına katmaz.
 - Model adı sürümüyle yazılır (`claude-sonnet-5-5`). Rapor takma adları birleştirir; CSV ham kalır.

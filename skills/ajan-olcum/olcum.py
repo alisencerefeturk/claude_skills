@@ -35,6 +35,8 @@ COLS = {
              "e2e_gecen", "e2e_kalan", "kacan_hata", "kacan_aciklama", "kaynak_bulma_dk", "main_kirik_dk", "flaky",
              "kaynak", "not"],
 }
+import oturum  # transcript'ten uzama ölçümü (aynı klasörde)
+COLS["oturum"] = [k for k in oturum.KOLON]
 for _k in COLS:  # veri sahibi: boş = bu makinenin sahibi; başkasından gelen satırda onun adı
     COLS[_k].insert(COLS[_k].index("proje") + 1, "sahip")
 FORMAT = 1
@@ -428,7 +430,7 @@ def cmd_rapor(a):
 
 import hashlib, shutil, tempfile
 
-SERBEST = ("not", "kacan_aciklama", "oturum_id", "test")  # serbest metin: anonim pakette atılır
+SERBEST = ("not", "kacan_aciklama", "oturum_id", "test", "istem_ozet")  # serbest metin: anonim pakette atılır
 
 
 def h(x, n=8):
@@ -459,6 +461,8 @@ def paket_yaz(hedef, satirlar, proje_adi_, temiz, sahip=""):
                     r["gorevler"] = "g-" + h(r["gorevler"])
                 if r.get("konu"):
                     r["konu"] = "k-" + h(r["konu"])
+                if rol == "oturum" and r.get("run_id"):  # oturum kimliği içerir
+                    r["run_id"] = "r-" + h(r["run_id"], 16)
                 if temiz == "gizle":
                     r["proje"] = "p-" + h(r.get("proje", ""))
             out.append(r)
@@ -574,6 +578,31 @@ def cmd_topla(a):
     print(f"toplam yeni satır: {toplam}")
 
 
+# ---------- oturum uzama ölçümü (oturum.py) ----------
+
+def cmd_oturum(a):
+    if a.islem == "tara":
+        oturum.tara(DATA, slug, a.dosya, a.gun, a.tamam, a.kaynak, a.sessiz)
+    elif a.islem == "kanca":
+        return oturum.kanca(Path(__file__).resolve())
+    else:
+        rows = read("oturum")
+        if a.proje:
+            rows = [r for r in rows if r.get("proje") == a.proje]
+        if a.sahip:
+            rows = [r for r in rows if (r.get("sahip") or "ben") == a.sahip]
+        md = oturum.rapor(rows, tablo, fmt, a.gun, gizli=a.gizli)
+        if a.html:
+            Path(a.html).write_text(md_to_html(md), encoding="utf-8")
+            print(f"yazıldı: {a.html}")
+        else:
+            print(md)
+
+
+def cmd_kanca(a):
+    oturum.kanca_kur(Path(__file__).resolve(), kaldir=a.islem == "kaldir")
+
+
 def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     sp = ap.add_subparsers(dest="cmd", required=True)
@@ -638,6 +667,23 @@ def main():
     p.add_argument("--sahip", help="yalnız bu sahibin satırları ('ben' = kendi satırların)")
     p.add_argument("--html", help="HTML dosyası yolu")
     p.set_defaults(f=cmd_rapor)
+
+    o = sp.add_parser("oturum", help="transcript'lerden uzama ölçümü: tara / rapor / kanca")
+    o.add_argument("islem", choices=["tara", "rapor", "kanca"])
+    o.add_argument("--gun", type=int, default=7, help="son N gün (0 = hepsi)")
+    o.add_argument("--dosya", action="append", help="tara: yalnız bu transcript(ler)")
+    o.add_argument("--tamam", action="store_true", help="tara: son tur bitmiş say (kanca kullanır)")
+    o.add_argument("--kaynak", default="geriye-donuk")
+    o.add_argument("--sessiz", action="store_true")
+    o.add_argument("--proje")
+    o.add_argument("--sahip", help="rapor: yalnız bu sahip ('ben' = kendi satırların)")
+    o.add_argument("--gizli", action="store_true", help="rapor: proje adı ve istem özeti gösterme (paylaşmak için)")
+    o.add_argument("--html")
+    o.set_defaults(f=cmd_oturum)
+
+    k = sp.add_parser("kanca", help="Claude Code Stop kancasını kur/kaldır (her tur sonunda oturum tara)")
+    k.add_argument("islem", choices=["kur", "kaldir"])
+    k.set_defaults(f=cmd_kanca)
 
     a = ap.parse_args()
     sys.exit(a.f(a) or 0)

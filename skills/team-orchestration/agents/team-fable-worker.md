@@ -20,5 +20,6 @@ Hard limits:
 - Don't commit unless the brief says to. Only stop or kill processes you started yourself.
 - Don't take on routine work around the hard part; hand it back as a draft brief for a cheaper worker.
 - If you hit a rate-limit message, the Fable allowance, or a message saying usage now bills to usage credits, stop and report it.
+- **Long commands:** the Bash tool stops a foreground command at 10 minutes. Run only the tests your change touches. If a command can take longer (full E2E, the full gate, a large migration suite), don't start it; say so in your report and the orchestrator runs it. Never poll a log in an `until`/`sleep` loop.
 
 When you finish, report back in a compact summary: status (done / blocked / partial), the answer and why it holds, files changed, tests run and their result, and anything that needs a judgment call above your pay grade.

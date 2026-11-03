@@ -25,6 +25,17 @@ git clone <repo-url> ~/skills && ~/skills/install.sh
 
 İki orkestrasyon skill'i aynı Claude klasörüne kurulmaz, ikisi de alt ajan dağıtımında yüklenir: kişisel makinede `opus-orchestration`, şirket Team hesabında `team-orchestration`. Güncellemek için `git pull`. Yeni skill eklemek için `skills/<ad>/SKILL.md` koymak yeter; `install.sh` yeniden çalıştırılır.
 
+## Uzama ölçümü (arkadaşlarla bir haftalık veri)
+
+Skill'lerin işi gereksiz uzatıp uzatmadığını ölçmek için, kurulumdan sonra:
+
+```bash
+olcum kanca kur            # her tur bitince oturum kaydı arka planda taranır; modele yük yok
+olcum oturum tara --gun 7  # kurulumdan önceki haftayı da ekler
+```
+
+Bir hafta sonra `olcum oturum rapor --gun 7` kendi özetini gösterir. Paylaşmak için `olcum disa-aktar --hedef paket --sahip <adın>`: istem metni, oturum kimliği ve serbest notlar atılır, görev adları özetlenir (`--proje-gizle` proje adlarını da gizler). Klasörü zipleyip gönder; alan `olcum topla --klasor paket` ve `olcum oturum rapor` ile birleştirir. Kancayı kaldırmak: `olcum kanca kaldir`.
+
 ## Ajanlara not
 
 Bu repoyu kurman istendiyse: klonla, `install.sh`'ı çalıştır, çıktıda bağlanan skill'leri kullanıcıya söyle. Hangi orkestrasyon skill'inin kurulacağını (kişisel Pro + ChatGPT → `opus-orchestration`, şirket Team → `team-orchestration`) bilmiyorsan sor; ikisini birden kurma. Kullanıcının verisi bu repoda değil `~/.ajan-olcum/data` altındadır; repoya veri koyma.

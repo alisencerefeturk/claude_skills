@@ -338,15 +338,25 @@ behind these rules: `reference/evidence.md`.
    more (rule 8). On a Pro seat six parallel workers took the 5h window from
    3% to 90% in 45 minutes; a Team seat's pool is a different size, but
    parallel workers drain it the same way.
+8. **No command a worker can't finish in 10 minutes.** The Bash tool stops a
+   foreground command at 10 minutes; the worker then polls the log and every
+   poll re-reads its history. A worker spec names only the tests the change
+   touches; the full E2E and the full gate are the manager's, run in the
+   background (`run_in_background`) on the merged candidate. Field data: one
+   Sonnet worker hit the limit 12 times on one task (181 active minutes, 188
+   API calls), running the sharded full E2E itself.
 
 ## Continuity when limits run out
 
 There is no second provider to fall back to, so the manager plans to stop
 cleanly instead.
 
-- **Checkpoint continuously.** After each meaningful step, write progress
-  (done, left, key decisions) to `.orchestration-checkpoint.md` in the
-  project (or its own task-tracking convention).
+- **Checkpoint continuously.** At the end of each turn in which the state
+  changed, write progress (done, left, key decisions, running workers) once
+  to the project's handoff file (`docs/DEVIR.md` "▶ BURADAN DEVAM ET",
+  `STATUS.md` or its own convention). Only a project with no handoff file
+  gets `.orchestration-checkpoint.md`; never keep both, since two files drift
+  apart and each write is a tool call.
 - **A rate-limit error is the signal.** Read what it says:
   - A model-specific limit (the Fable allowance, a per-model weekly cap):
     move the work down one model if the task allows it (Fable → Opus,

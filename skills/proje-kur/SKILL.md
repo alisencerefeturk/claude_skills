@@ -15,7 +15,8 @@ Kullanıcının projelerinde kendiliğinden oluşmuş ajan çalışma düzenini 
 
 Bu skill'in dosyaları:
 
-- `reference/varsayilanlar.md`: kullanıcıya özgü sabitler (commit kimliği, GitHub, sunucu). Her kur/uyarla işinden önce oku.
+- Varsayılanlar (commit kimliği, GitHub, sunucu): `${CLAUDE_CONFIG_DIR:-~/.claude}/proje-kur-varsayilanlar.md` varsa o, yoksa `reference/varsayilanlar.md` (repo sahibinin sabitleri). Bu bölümde "`varsayilanlar.md`" bu dosya demektir. Her kur/uyarla işinden önce oku. Kişisel dosyadaki bir alan "sorulur" diyorsa kullanıcıya sor ve cevabı o dosyaya yaz.
+- Kurulum: bu klasördeki `install.sh` (skill'i bağlar, repo sahibi değilsen kişisel varsayılanlar dosyasını açar).
 - `reference/ilkeler.md`: her kuralın neden var olduğu ve kanıtı. Uyarlamada karar verirken ya da kullanıcı "neden" diye sorunca oku.
 - `sablonlar/`: üretilecek dosyaların şablonları.
 

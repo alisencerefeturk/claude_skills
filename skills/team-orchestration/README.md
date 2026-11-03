@@ -52,11 +52,7 @@ If the company account uses its own config directory on a machine that also has 
 CLAUDE_CONFIG_DIR=~/.claude-work ~/skills/install.sh team-orchestration
 ```
 
-`install.sh` symlinks the files, moving existing ones to `<config dir>/backups/team-orchestration-<timestamp>/` first, and warns if `opus-orchestration` is installed in the same place. The status line is optional (it shows model, context and effort):
-
-```json
-"statusLine": { "type": "command", "command": "~/.claude/statusline.sh" }
-```
+`install.sh` symlinks the files, moving existing ones to `<config dir>/backups/team-orchestration-<timestamp>/` first, adds the status line to `settings.json` if none is set (it shows model, context and effort), and stops if `opus-orchestration` is installed in the same place.
 
 Requirements: Claude Code on a Team seat (Fable 5.1 needs Claude Code 2.1.255 or later), Python 3 for the statusline.
 

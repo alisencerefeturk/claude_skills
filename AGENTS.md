@@ -4,4 +4,4 @@
 - Commit identity: `alisencerefeturk <161599497+alisencerefeturk@users.noreply.github.com>`.
 - Push only when the owner asks.
 - Installed skills, agent presets and the statusline in `~/.claude` are symlinks into this repo, so edits take effect immediately.
-- Each skill lives in `skills/<name>/`. A skill with extra parts (agents, statusline) has its own `install.sh`; the root `install.sh` runs it.
+- Each skill lives in `skills/<name>/` with its own `install.sh` that does that skill's whole setup (links, commands, settings.json changes with a backup), idempotent and non-interactive, so an agent can install it when a user just says "kur". The root `install.sh` only calls them. A new skill gets its own `install.sh` too.

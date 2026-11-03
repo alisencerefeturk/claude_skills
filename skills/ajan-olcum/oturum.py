@@ -32,7 +32,7 @@ TAZE_SN = 900  # bu kadar yeni değişmiş dosyanın son turu henüz bitmemiş o
 
 
 def projeler_dizini():
-    return Path(os.environ.get("CLAUDE_CONFIG_DIR", Path.home() / ".claude")) / "projects"
+    return Path(os.environ.get("CLAUDE_DIR") or os.environ.get("CLAUDE_CONFIG_DIR") or Path.home() / ".claude") / "projects"
 
 
 def zaman(s):

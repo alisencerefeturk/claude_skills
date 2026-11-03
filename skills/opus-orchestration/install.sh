@@ -6,7 +6,7 @@
 set -euo pipefail
 
 REPO="$(cd "$(dirname "$0")" && pwd)"
-CLAUDE_DIR="${CLAUDE_DIR:-$HOME/.claude}"
+CLAUDE_DIR="${CLAUDE_DIR:-${CLAUDE_CONFIG_DIR:-$HOME/.claude}}"
 STAMP="$(date +%Y%m%d%H%M%S)"
 BACKUP_DIR="$CLAUDE_DIR/backups/opus-orchestration-$STAMP"
 
@@ -26,6 +26,12 @@ link() {
   echo "linked   $dst -> $src"
 }
 
+if [ -e "$CLAUDE_DIR/skills/team-orchestration" ]; then
+  echo "team-orchestration zaten kurulu ($CLAUDE_DIR). İki orkestrasyon aynı klasöre kurulmaz; önce onu kaldır:" >&2
+  echo "  rm \"$CLAUDE_DIR/skills/team-orchestration\"" >&2
+  exit 1
+fi
+
 link "$REPO" "$CLAUDE_DIR/skills/opus-orchestration"
 link "$REPO/agents/sonnet-worker.md"   "$CLAUDE_DIR/agents/sonnet-worker.md"
 link "$REPO/agents/haiku-worker.md"    "$CLAUDE_DIR/agents/haiku-worker.md"
@@ -35,9 +41,26 @@ done
 link "$REPO/statusline/statusline.sh"  "$CLAUDE_DIR/statusline.sh"
 chmod +x "$REPO/statusline/statusline.sh"
 
-cat <<'EOF'
+# statusLine yoksa settings.json'a eklenir (yedekli); başka bir statusLine varsa dokunulmaz.
+python3 - "$CLAUDE_DIR/settings.json" "$CLAUDE_DIR/statusline.sh" <<'PY'
+import json, os, shutil, sys, time
+p, cmd = sys.argv[1], sys.argv[2]
+d = json.load(open(p, encoding="utf-8")) if os.path.exists(p) else {}
+cur = (d.get("statusLine") or {}).get("command", "")
+if cur and os.path.expanduser(cur) == cmd:
+    print("ok       statusLine")
+elif cur:
+    print(f"statusLine başka bir komuta bağlı, dokunulmadı: {cur}\n  kota okuması için: \"statusLine\": {{\"type\": \"command\", \"command\": \"{cmd}\"}}")
+else:
+    if os.path.exists(p):
+        shutil.copy(p, f"{p}.statusline-yedek-{time.strftime('%Y%m%d%H%M%S')}")
+    d["statusLine"] = {"type": "command", "command": cmd}
+    tmp = p + ".tmp"
+    with open(tmp, "w", encoding="utf-8") as f:
+        json.dump(d, f, indent=2, ensure_ascii=False); f.write("\n")
+    os.replace(tmp, p)
+    print(f"statusLine eklendi: {p}")
+PY
 
-Done. If you haven't already, add this to ~/.claude/settings.json:
-
-  "statusLine": { "type": "command", "command": "~/.claude/statusline.sh" }
-EOF
+echo
+echo "Bitti. Kota anlık görüntüsü ilk mesajdan sonra $CLAUDE_DIR/rate-limit-status.json'a yazılır. Codex hatları için: npm i -g @openai/codex && codex login"

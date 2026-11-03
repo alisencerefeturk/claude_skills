@@ -29,6 +29,12 @@ link() {
   echo "linked   $dst -> $src"
 }
 
+if [ -e "$CLAUDE_DIR/skills/opus-orchestration" ]; then
+  echo "opus-orchestration zaten kurulu ($CLAUDE_DIR). İki orkestrasyon aynı klasöre kurulmaz; önce onu kaldır:" >&2
+  echo "  rm \"$CLAUDE_DIR/skills/opus-orchestration\"" >&2
+  exit 1
+fi
+
 link "$REPO" "$CLAUDE_DIR/skills/team-orchestration"
 for a in team-haiku-worker team-sonnet-worker team-sonnet-worker-high \
          team-opus-worker team-opus-worker-high team-fable-worker; do
@@ -39,19 +45,26 @@ if [ -f "$STATUSLINE" ]; then
   chmod +x "$STATUSLINE"
 fi
 
-if [ -e "$CLAUDE_DIR/skills/opus-orchestration" ]; then
-  cat <<EOF
+# statusLine yoksa settings.json'a eklenir (yedekli); başka bir statusLine varsa dokunulmaz.
+python3 - "$CLAUDE_DIR/settings.json" "$CLAUDE_DIR/statusline.sh" <<'PY'
+import json, os, shutil, sys, time
+p, cmd = sys.argv[1], sys.argv[2]
+d = json.load(open(p, encoding="utf-8")) if os.path.exists(p) else {}
+cur = (d.get("statusLine") or {}).get("command", "")
+if cur and os.path.expanduser(cur) == cmd:
+    print("ok       statusLine")
+elif cur:
+    print(f"statusLine başka bir komuta bağlı, dokunulmadı: {cur}\n  kota okuması için: \"statusLine\": {{\"type\": \"command\", \"command\": \"{cmd}\"}}")
+else:
+    if os.path.exists(p):
+        shutil.copy(p, f"{p}.statusline-yedek-{time.strftime('%Y%m%d%H%M%S')}")
+    d["statusLine"] = {"type": "command", "command": cmd}
+    tmp = p + ".tmp"
+    with open(tmp, "w", encoding="utf-8") as f:
+        json.dump(d, f, indent=2, ensure_ascii=False); f.write("\n")
+    os.replace(tmp, p)
+    print(f"statusLine eklendi: {p}")
+PY
 
-Warning: opus-orchestration is also installed in $CLAUDE_DIR.
-Both policies would load on sub-agent work. On the Team account remove it:
-  rm "$CLAUDE_DIR/skills/opus-orchestration"
-EOF
-fi
-
-cat <<EOF
-
-Done. Optional status line (shows model, context and effort; Team seats
-usually get no quota bars) in $CLAUDE_DIR/settings.json:
-
-  "statusLine": { "type": "command", "command": "$CLAUDE_DIR/statusline.sh" }
-EOF
+echo
+echo "Bitti."
